@@ -5,6 +5,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"sync"
 
 	"GoBlogging/config"
@@ -25,7 +26,7 @@ type Reader struct {
 func New(c *config.Config, startWorker WorkerFunc) *Reader {
 	return &Reader{
 		c,
-		4,
+		runtime.NumCPU() * 2,
 		startWorker,
 		sync.Mutex{},
 		pages.NewIndex(c.BlogTitle),

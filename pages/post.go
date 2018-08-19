@@ -60,8 +60,6 @@ func parse(post *Post, fileData string) (*Post, error) {
 	r.RenderFooter(&buf, ast)
 	post.Content = string(buf.Bytes())
 
-	fmt.Println(post.Content)
-
 	return post, nil
 }
 

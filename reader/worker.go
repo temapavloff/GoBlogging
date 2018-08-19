@@ -15,7 +15,6 @@ func Worker(r *Reader, pagesCh <-chan string, postCh chan<- *pages.Post) {
 	for page := range pagesCh {
 		pageContent, _ := ioutil.ReadFile(path.Join(page, "./index.md"))
 		relPath := getRelativePath(r.config.GetAbsPath(r.config.Input), page)
-		fmt.Println(relPath)
 		post, err := pages.NewPost(
 			string(pageContent),
 			page,
@@ -26,7 +25,7 @@ func Worker(r *Reader, pagesCh <-chan string, postCh chan<- *pages.Post) {
 		}
 		r.mutex.Lock()
 		r.Index.AddPost(post)
-		r.Tags.UpdateTags(post)
+		r.Tags.UpdateTags(r.config.ServerPath, post)
 		r.mutex.Unlock()
 		postCh <- post
 	}

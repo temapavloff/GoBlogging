@@ -32,6 +32,7 @@ type Tag struct {
 	Title string
 	Count int
 	Posts []*Post
+	URL   string
 }
 
 // Tags - representation of all tags
@@ -45,9 +46,9 @@ func NewTags() *Tags {
 }
 
 // UpdateTags - updates tags data from given post
-func (t *Tags) UpdateTags(p *Post) {
+func (t *Tags) UpdateTags(serverPath string, p *Post) {
 	for _, tagString := range p.Tags {
-		t.updateOneTag(tagString, p)
+		t.updateOneTag(serverPath, tagString, p)
 	}
 }
 
@@ -56,9 +57,9 @@ func (t *Tags) All() map[string]Tag {
 	return t.data
 }
 
-func (t *Tags) updateOneTag(tagString string, p *Post) {
+func (t *Tags) updateOneTag(serverPath, tagString string, p *Post) {
 	if _, has := t.data[tagString]; !has {
-		t.data[tagString] = Tag{Title: tagString}
+		t.data[tagString] = Tag{Title: tagString, URL: serverPath + "/" + tagString}
 	}
 
 	tag := t.data[tagString]
