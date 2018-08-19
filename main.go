@@ -3,8 +3,8 @@ package main
 import (
 	"flag"
 
+	"GoBlogging/builder"
 	"GoBlogging/config"
-	"GoBlogging/reader"
 )
 
 func main() {
@@ -12,7 +12,8 @@ func main() {
 	flag.Parse()
 
 	c := config.New(*configPath)
-	r := reader.New(c, reader.Worker)
+	r := builder.New(c)
 
-	r.Run()
+	r.Read(builder.Reader)
+	r.Write()
 }

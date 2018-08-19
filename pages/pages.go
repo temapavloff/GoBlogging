@@ -1,8 +1,31 @@
 package pages
 
 import (
+	"GoBlogging/config"
 	"sort"
 )
+
+// Pages - representation of whole blog
+type Pages struct {
+	config *config.Config
+	Index  *Index
+	Tags   *Tags
+}
+
+// New - creates new instance of Pages
+func New(c *config.Config) *Pages {
+	return &Pages{
+		config: c,
+		Index:  &Index{Title: c.BlogTitle},
+		Tags:   &Tags{data: make(map[string]*Tag)},
+	}
+}
+
+// Add - adds new post onto blog structure
+func (p *Pages) Add(post *Post) {
+	p.Index.addPost(post)
+	p.Tags.updateTags(p.config.ServerPath, post)
+}
 
 // Index - representation of index page
 type Index struct {
@@ -10,18 +33,13 @@ type Index struct {
 	Posts []*Post
 }
 
-// NewIndex - creates new index pages instance
-func NewIndex(title string) *Index {
-	return &Index{Title: title}
-}
-
 // AddPost - adds new post into pages
-func (i *Index) AddPost(p *Post) {
+func (i *Index) addPost(p *Post) {
 	i.Posts = append(i.Posts, p)
 }
 
 // Order - orders posts by creation time
-func (i *Index) Order() {
+func (i *Index) order() {
 	sort.Slice(i.Posts, func(prev, next int) bool {
 		return i.Posts[prev].Created.After(i.Posts[next].Created)
 	})
@@ -37,29 +55,19 @@ type Tag struct {
 
 // Tags - representation of all tags
 type Tags struct {
-	data map[string]Tag
-}
-
-// NewTags - creates new tags page instance
-func NewTags() *Tags {
-	return &Tags{data: make(map[string]Tag)}
+	data map[string]*Tag
 }
 
 // UpdateTags - updates tags data from given post
-func (t *Tags) UpdateTags(serverPath string, p *Post) {
+func (t *Tags) updateTags(serverPath string, p *Post) {
 	for _, tagString := range p.Tags {
 		t.updateOneTag(serverPath, tagString, p)
 	}
 }
 
-// All - returns map of al tags
-func (t *Tags) All() map[string]Tag {
-	return t.data
-}
-
 func (t *Tags) updateOneTag(serverPath, tagString string, p *Post) {
 	if _, has := t.data[tagString]; !has {
-		t.data[tagString] = Tag{Title: tagString, URL: serverPath + "/" + tagString}
+		t.data[tagString] = &Tag{Title: tagString, URL: serverPath + "/" + tagString}
 	}
 
 	tag := t.data[tagString]

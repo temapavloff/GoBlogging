@@ -1,4 +1,4 @@
-package reader
+package builder
 
 import (
 	"fmt"
@@ -12,41 +12,39 @@ import (
 	"GoBlogging/pages"
 )
 
-// Reader - main object for reading directory tree
-type Reader struct {
-	config      *config.Config
-	workers     int
-	startWorker WorkerFunc
-	mutex       sync.Mutex
-	Index       *pages.Index
-	Tags        *pages.Tags
+// Builder - main object for reading directory tree
+type Builder struct {
+	config  *config.Config
+	workers int
+	mutex   sync.Mutex
+	pages   *pages.Pages
 }
 
 // New - creates new Reader instance
-func New(c *config.Config, startWorker WorkerFunc) *Reader {
-	return &Reader{
+func New(c *config.Config) *Builder {
+	return &Builder{
 		c,
 		runtime.NumCPU() * 2,
-		startWorker,
 		sync.Mutex{},
-		pages.NewIndex(c.BlogTitle),
-		pages.NewTags(),
+		pages.New(c),
 	}
 }
 
 // Run - starts build process
-func (r *Reader) Run() {
+func (b *Builder) Read(worker ReaderFunc) {
+	fmt.Printf("Reading directiry tree\n")
+
 	pagesCh := make(chan string)
 	resultCh := make(chan *pages.Post)
 
 	defer close(pagesCh)
 	defer close(resultCh)
 
-	for i := 0; i < r.workers; i++ {
-		go r.startWorker(r, pagesCh, resultCh)
+	for i := 0; i < b.workers; i++ {
+		go worker(b, pagesCh, resultCh)
 	}
 
-	total := readTree(r.config.GetAbsPath(r.config.Input), pagesCh)
+	total := readTree(b.config.GetAbsPath(b.config.Input), pagesCh)
 
 	cnt := 0
 	for range resultCh {
@@ -54,6 +52,12 @@ func (r *Reader) Run() {
 			break
 		}
 	}
+
+	fmt.Printf("Build blog structure, %d posts handled\n", total)
+}
+
+func (b *Builder) Write() {
+	fmt.Printf("Starting render\n")
 }
 
 func readTree(dir string, pages chan<- string) int {
