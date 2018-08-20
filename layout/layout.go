@@ -59,3 +59,16 @@ func (l Layout) RenderIndex(writer io.Writer, index *pages.Index) error {
 
 	return tpl.Execute(writer, index)
 }
+
+// RenderTag - renders one tag page
+func (l Layout) RenderTag(writer io.Writer, tag *pages.Tag) error {
+	tpl, err := l.prepareLayout()
+	if err != nil {
+		return err
+	}
+	if _, err := tpl.New("content").Parse(l.tagTemplate); err != nil {
+		return err
+	}
+
+	return tpl.Execute(writer, tag)
+}

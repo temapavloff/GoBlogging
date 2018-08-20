@@ -47,11 +47,16 @@ func (b *Builder) Read(worker ReaderFunc) {
 
 	total := readTree(b.config.GetAbsPath(b.config.Input), pagesCh)
 
-	cnt := 0
-	for range resultCh {
-		if cnt++; cnt == total {
-			break
+	//cnt := 0
+	/*
+		for range resultCh {
+			if cnt++; cnt == total {
+				break
+			}
 		}
+	*/
+	for i := 0; i < total; i++ {
+		<-resultCh
 	}
 
 	fmt.Printf("Build blog structure, %d posts handled.\n", total)
@@ -60,12 +65,46 @@ func (b *Builder) Read(worker ReaderFunc) {
 func (b *Builder) Write() {
 	fmt.Printf("Rendering...\n")
 
+	total := b.pages.Len()
+	errCh := make(chan error, 1)
+	doneCh := make(chan bool, total)
+
+	defer close(errCh)
+	defer close(doneCh)
+
 	l := layout.New()
 
 	// l.RenderIndex(os.Stdout, b.pages.Index)
-	for _, p := range b.pages.Index.Posts {
-		l.RenderPost(os.Stdout, p)
+	//for _, p := range b.pages.Index.Posts {
+	//	l.RenderPost(os.Stdout, p)
+	//}
+
+	//for i := 0; i < total; i++ {
+	//	go func() { doneCh <- true }()
+	//}
+
+	b.pages.Walk(func(n pages.Node) error {
+		switch n.Type {
+		case pages.IndexType:
+			l.RenderIndex(os.Stdout, n.Index)
+		case pages.TagType:
+			l.RenderTag(os.Stdout, n.Tag)
+		case pages.PostType:
+			l.RenderPost(os.Stdout, n.Post)
+		}
+		doneCh <- true
+		return nil
+	})
+
+	for i := 0; i < total; i++ {
+		select {
+		case err := <-errCh:
+			panic(err)
+		case <-doneCh:
+		}
 	}
+
+	fmt.Printf("%d pages has been written.\n", total)
 }
 
 func readTree(dir string, pages chan<- string) int {

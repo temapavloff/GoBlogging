@@ -12,8 +12,8 @@ func main() {
 	flag.Parse()
 
 	c := config.New(*configPath)
-	r := builder.New(c)
+	b := builder.New(c)
 
-	r.Read(builder.Reader)
-	r.Write()
+	b.Read(builder.Reader)
+	b.Write()
 }

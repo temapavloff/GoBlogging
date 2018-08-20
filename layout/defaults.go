@@ -21,7 +21,7 @@ const postDefault = `
 		<h1>{{ .Title }}</h1>
 	</header>
 	<div>{{ .Content }}</div>
-	<foooter>
+	<footer>
 		<ul>
 			{{ range .Tags }}
 				<li>
