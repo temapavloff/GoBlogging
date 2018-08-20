@@ -9,6 +9,7 @@ import (
 	"sync"
 
 	"GoBlogging/config"
+	"GoBlogging/layout"
 	"GoBlogging/pages"
 )
 
@@ -32,7 +33,7 @@ func New(c *config.Config) *Builder {
 
 // Run - starts build process
 func (b *Builder) Read(worker ReaderFunc) {
-	fmt.Printf("Reading directiry tree\n")
+	fmt.Printf("Reading directiry tree...\n")
 
 	pagesCh := make(chan string)
 	resultCh := make(chan *pages.Post)
@@ -53,11 +54,18 @@ func (b *Builder) Read(worker ReaderFunc) {
 		}
 	}
 
-	fmt.Printf("Build blog structure, %d posts handled\n", total)
+	fmt.Printf("Build blog structure, %d posts handled.\n", total)
 }
 
 func (b *Builder) Write() {
-	fmt.Printf("Starting render\n")
+	fmt.Printf("Rendering...\n")
+
+	l := layout.New()
+
+	// l.RenderIndex(os.Stdout, b.pages.Index)
+	for _, p := range b.pages.Index.Posts {
+		l.RenderPost(os.Stdout, p)
+	}
 }
 
 func readTree(dir string, pages chan<- string) int {

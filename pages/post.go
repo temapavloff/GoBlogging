@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"html/template"
 	"reflect"
 	"strings"
 	"time"
@@ -16,11 +17,13 @@ type Post struct {
 	Title      string    `meta:"title"`
 	Cover      string    `meta:"cover"`
 	Created    time.Time `meta:"created"`
-	Tags       []string  `meta:"tags"`
-	Content    string
+	Tags       []*Tag
+	Content    template.HTML
 	InputPath  string
 	OutputPath string
 	URL        string
+
+	StringTags []string `meta:"tags"`
 }
 
 // NewPost - creates new Post instance
@@ -58,7 +61,7 @@ func parse(post *Post, fileData string) (*Post, error) {
 		return r.RenderNode(&buf, node, entering)
 	})
 	r.RenderFooter(&buf, ast)
-	post.Content = string(buf.Bytes())
+	post.Content = template.HTML(buf.Bytes())
 
 	return post, nil
 }
