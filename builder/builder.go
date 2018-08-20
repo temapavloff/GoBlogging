@@ -9,7 +9,6 @@ import (
 	"sync"
 
 	"GoBlogging/config"
-	"GoBlogging/layout"
 	"GoBlogging/pages"
 )
 
@@ -62,7 +61,7 @@ func (b *Builder) Read(worker ReaderFunc) {
 	fmt.Printf("Build blog structure, %d posts handled.\n", total)
 }
 
-func (b *Builder) Write() {
+func (b *Builder) Write(w *Writer) {
 	fmt.Printf("Rendering...\n")
 
 	total := b.pages.Len()
@@ -71,8 +70,6 @@ func (b *Builder) Write() {
 
 	defer close(errCh)
 	defer close(doneCh)
-
-	l := layout.New()
 
 	// l.RenderIndex(os.Stdout, b.pages.Index)
 	//for _, p := range b.pages.Index.Posts {
@@ -83,18 +80,10 @@ func (b *Builder) Write() {
 	//	go func() { doneCh <- true }()
 	//}
 
-	b.pages.Walk(func(n pages.Node) error {
-		switch n.Type {
-		case pages.IndexType:
-			l.RenderIndex(os.Stdout, n.Index)
-		case pages.TagType:
-			l.RenderTag(os.Stdout, n.Tag)
-		case pages.PostType:
-			l.RenderPost(os.Stdout, n.Post)
-		}
-		doneCh <- true
-		return nil
-	})
+	if err := w.Prepare(); err != nil {
+		panic(err)
+	}
+	b.pages.Walk(w.GetWriterFn(doneCh, errCh))
 
 	for i := 0; i < total; i++ {
 		select {

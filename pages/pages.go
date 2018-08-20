@@ -128,8 +128,8 @@ func (t *Tags) updateOneTag(c *config.Config, tagString string, p *Post) *Tag {
 		tagSlug := slug(tagString)
 		newTag := &Tag{
 			Title:  tagString,
-			URL:    c.ServerPath + "/" + tagSlug,
-			Output: c.GetAbsPath(c.Output + "/" + tagSlug),
+			URL:    c.ServerPath + "/tags/" + tagSlug,
+			Output: c.GetAbsPath(c.Output + "/tags/" + tagSlug),
 		}
 		t.data[tagString] = newTag
 	}

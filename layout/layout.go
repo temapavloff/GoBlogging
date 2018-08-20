@@ -1,6 +1,7 @@
 package layout
 
 import (
+	"GoBlogging/config"
 	"GoBlogging/pages"
 	"html/template"
 	"io"
@@ -8,6 +9,7 @@ import (
 
 // Layout - blog template representation
 type Layout struct {
+	config        *config.Config
 	outerTemplate string
 	postTemplate  string
 	indexTemplate string
@@ -15,14 +17,24 @@ type Layout struct {
 }
 
 // New - creates new Layout instance
-func New() Layout {
+func New(c *config.Config) Layout {
 
 	return Layout{
+		config:        c,
 		outerTemplate: outerDefault,
 		postTemplate:  postDefault,
 		indexTemplate: indexDefault,
 		tagTemplate:   tagDefault,
 	}
+}
+
+// GetAssetsPath - returns assets path for selected
+func (l Layout) GetAssetsPath() string {
+	if l.config.Template == "" {
+		return ""
+	}
+
+	return l.config.GetAbsPath("/templates/" + l.config.Template + "/assets")
 }
 
 func (l Layout) prepareLayout() (*template.Template, error) {

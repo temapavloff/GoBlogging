@@ -1,6 +1,8 @@
 package layout
 
-const outerDefault = `<html>
+const outerDefault = `<!DOCTYPE html>
+<html>
+	<meta charset="utf-8"> 
 	<head>
 		{{ template "head" . }}
 	</head>
