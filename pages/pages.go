@@ -66,7 +66,7 @@ func (t *Tags) updateTags(serverPath string, p *Post) {
 
 func (t *Tags) updateOneTag(serverPath, tagString string, p *Post) *Tag {
 	if _, has := t.data[tagString]; !has {
-		newTag := &Tag{Title: tagString, URL: serverPath + "/" + tagString}
+		newTag := &Tag{Title: tagString, URL: serverPath + "/" + slug(tagString)}
 		t.data[tagString] = newTag
 	}
 
