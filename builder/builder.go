@@ -34,29 +34,17 @@ func New(c *config.Config) *Builder {
 func (b *Builder) Read(worker ReaderFunc) {
 	fmt.Printf("Reading directiry tree...\n")
 
+	var wg sync.WaitGroup
 	pagesCh := make(chan string)
-	resultCh := make(chan *pages.Post)
 
 	defer close(pagesCh)
-	defer close(resultCh)
 
 	for i := 0; i < b.workers; i++ {
-		go worker(b, pagesCh, resultCh)
+		go worker(b, pagesCh, &wg)
 	}
 
-	total := readTree(b.config.GetAbsPath(b.config.Input), pagesCh)
-
-	//cnt := 0
-	/*
-		for range resultCh {
-			if cnt++; cnt == total {
-				break
-			}
-		}
-	*/
-	for i := 0; i < total; i++ {
-		<-resultCh
-	}
+	total := readTree(b.config.GetAbsPath(b.config.Input), pagesCh, &wg)
+	wg.Wait()
 
 	fmt.Printf("Build blog structure, %d posts handled.\n", total)
 }
@@ -64,39 +52,40 @@ func (b *Builder) Read(worker ReaderFunc) {
 func (b *Builder) Write(w *Writer) {
 	fmt.Printf("Rendering...\n")
 
-	total := b.pages.Len()
+	var wg sync.WaitGroup
 	errCh := make(chan error, 1)
-	doneCh := make(chan bool, total)
+	nodeCh := make(chan pages.Node)
 
-	defer close(errCh)
-	defer close(doneCh)
-
-	// l.RenderIndex(os.Stdout, b.pages.Index)
-	//for _, p := range b.pages.Index.Posts {
-	//	l.RenderPost(os.Stdout, p)
-	//}
-
-	//for i := 0; i < total; i++ {
-	//	go func() { doneCh <- true }()
-	//}
+	defer close(nodeCh)
 
 	if err := w.Prepare(); err != nil {
 		panic(err)
 	}
-	b.pages.Walk(w.GetWriterFn(doneCh, errCh))
-
-	for i := 0; i < total; i++ {
-		select {
-		case err := <-errCh:
-			panic(err)
-		case <-doneCh:
-		}
+	for i := 0; i < b.workers; i++ {
+		go w.Write(nodeCh, errCh, &wg)
 	}
+	b.pages.Walk(func(n pages.Node) error {
+		wg.Add(1)
+		nodeCh <- n
+		return nil
+	})
 
-	fmt.Printf("%d pages has been written.\n", total)
+	go func() {
+		wg.Wait()
+		close(errCh)
+		fmt.Printf("%d pages has been written.\n", b.pages.Len())
+	}()
+
+	select {
+	case err, ok := <-errCh:
+		if !ok {
+			break
+		}
+		panic(err)
+	}
 }
 
-func readTree(dir string, pages chan<- string) int {
+func readTree(dir string, pages chan<- string, wg *sync.WaitGroup) int {
 	total := 0
 	err := filepath.Walk(dir, func(curPath string, curInfo os.FileInfo, err error) error {
 		if err != nil {
@@ -114,6 +103,7 @@ func readTree(dir string, pages chan<- string) int {
 			return nil
 		}
 
+		wg.Add(1)
 		total++
 		pages <- curPath
 
@@ -123,6 +113,5 @@ func readTree(dir string, pages chan<- string) int {
 	if err != nil {
 		panic(fmt.Errorf("Cannot read directory tree: %s", err))
 	}
-
 	return total
 }

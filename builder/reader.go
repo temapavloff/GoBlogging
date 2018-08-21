@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"io/ioutil"
 	"path"
+	"sync"
 )
 
 // ReaderFunc - worker function type declaration
-type ReaderFunc func(*Builder, <-chan string, chan<- *pages.Post)
+type ReaderFunc func(*Builder, <-chan string, *sync.WaitGroup)
 
 // Reader - default worker function
-func Reader(b *Builder, pagesCh <-chan string, postCh chan<- *pages.Post) {
+func Reader(b *Builder, pagesCh <-chan string, wg *sync.WaitGroup) {
 	for page := range pagesCh {
 		pageContent, _ := ioutil.ReadFile(path.Join(page, "./index.md"))
 		relPath := getRelativePath(b.config.GetAbsPath(b.config.Input), page)
@@ -26,7 +27,7 @@ func Reader(b *Builder, pagesCh <-chan string, postCh chan<- *pages.Post) {
 		b.mutex.Lock()
 		b.pages.Add(post)
 		b.mutex.Unlock()
-		postCh <- post
+		wg.Done()
 	}
 }
 
