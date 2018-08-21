@@ -29,18 +29,25 @@ type Post struct {
 // NewPost - creates new Post instance
 func NewPost(fileContent, inputPath, outputPath, URL string) (*Post, error) {
 	post := &Post{InputPath: inputPath, OutputPath: outputPath, URL: URL}
-	return parse(post, fileContent)
+	err := parse(post, fileContent)
+	if err != nil {
+		return post, err
+	}
+	if post.Cover != "" {
+		post.Cover = URL + "/" + post.Cover
+	}
+	return post, err
 }
 
-func parse(post *Post, fileData string) (*Post, error) {
+func parse(post *Post, fileData string) error {
 	parts := strings.SplitN(strings.TrimSpace(fileData), "\n\n", 2)
 
 	if len(parts) != 2 {
-		return post, errors.New("Metadata and page content must be split by 2 newlines")
+		return errors.New("Metadata and page content must be split by 2 newlines")
 	}
 
 	if err := parseMetadata(post, parts[0]); err != nil {
-		return post, fmt.Errorf("Cannot parse post metadata: %s", err)
+		return fmt.Errorf("Cannot parse post metadata: %s", err)
 	}
 
 	r := blackfriday.NewHTMLRenderer(blackfriday.HTMLRendererParameters{
@@ -63,7 +70,7 @@ func parse(post *Post, fileData string) (*Post, error) {
 	r.RenderFooter(&buf, ast)
 	post.Content = template.HTML(buf.Bytes())
 
-	return post, nil
+	return nil
 }
 
 func parseMetadata(post *Post, metaString string) error {
