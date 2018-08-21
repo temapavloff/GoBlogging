@@ -37,8 +37,9 @@ func New(c *config.Config) Layout {
 		}
 	}
 
-	if _, err := os.Stat(getTemplatePath(c, "")); err != nil {
-		panic(err)
+	path := getTemplatePath(c, "")
+	if _, err := os.Stat(path); err != nil {
+		panic(fmt.Errorf("Template not found at %s", path))
 	}
 
 	return Layout{
@@ -114,7 +115,7 @@ func getTemplatePath(c *config.Config, name string) string {
 func loadTemplate(c *config.Config, name, fallback string) string {
 	path := getTemplatePath(c, name)
 	if _, err := os.Stat(path); err != nil {
-		fmt.Printf("Template file %s not found. Falling back to default template.", name)
+		fmt.Printf("Template file %s not found. Falling back to default template.\n", name)
 		return fallback
 	}
 

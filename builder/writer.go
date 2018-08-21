@@ -39,7 +39,7 @@ func (w *Writer) Prepare() error {
 
 	// Its OK if template doesn't have assets
 	if _, err := os.Stat(assetsPath); err == nil && assetsPath != "" {
-		copyAll(assetsPath, outDir)
+		copyAll(assetsPath, outDir+"/assets")
 	}
 
 	return nil
