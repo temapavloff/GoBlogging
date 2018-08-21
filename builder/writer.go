@@ -36,7 +36,9 @@ func (w *Writer) Prepare() error {
 	}
 
 	assetsPath := w.layout.GetAssetsPath()
-	if assetsPath != "" {
+
+	// Its OK if template doesn't have assets
+	if _, err := os.Stat(assetsPath); err == nil && assetsPath != "" {
 		copyAll(assetsPath, outDir)
 	}
 

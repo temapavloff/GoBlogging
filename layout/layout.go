@@ -3,9 +3,17 @@ package layout
 import (
 	"GoBlogging/config"
 	"GoBlogging/pages"
+	"fmt"
 	"html/template"
 	"io"
+	"io/ioutil"
+	"os"
 )
+
+const outerName = "layout.html"
+const postName = "post.html"
+const indexName = "index.html"
+const tagName = "tag.html"
 
 // Layout - blog template representation
 type Layout struct {
@@ -19,12 +27,26 @@ type Layout struct {
 // New - creates new Layout instance
 func New(c *config.Config) Layout {
 
+	if c.Template == "" {
+		return Layout{
+			config:        c,
+			outerTemplate: outerDefault,
+			postTemplate:  postDefault,
+			indexTemplate: indexDefault,
+			tagTemplate:   tagDefault,
+		}
+	}
+
+	if _, err := os.Stat(getTemplatePath(c, "")); err != nil {
+		panic(err)
+	}
+
 	return Layout{
 		config:        c,
-		outerTemplate: outerDefault,
-		postTemplate:  postDefault,
-		indexTemplate: indexDefault,
-		tagTemplate:   tagDefault,
+		outerTemplate: loadTemplate(c, outerName, outerDefault),
+		postTemplate:  loadTemplate(c, postName, postDefault),
+		indexTemplate: loadTemplate(c, indexName, indexDefault),
+		tagTemplate:   loadTemplate(c, tagName, tagDefault),
 	}
 }
 
@@ -83,4 +105,23 @@ func (l Layout) RenderTag(writer io.Writer, tag *pages.Tag) error {
 	}
 
 	return tpl.Execute(writer, tag)
+}
+
+func getTemplatePath(c *config.Config, name string) string {
+	return c.GetAbsPath("/templates/" + c.Template + "/" + name)
+}
+
+func loadTemplate(c *config.Config, name, fallback string) string {
+	path := getTemplatePath(c, name)
+	if _, err := os.Stat(path); err != nil {
+		fmt.Printf("Template file %s not found. Falling back to default template.", name)
+		return fallback
+	}
+
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(data)
 }
