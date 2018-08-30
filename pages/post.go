@@ -17,6 +17,7 @@ type Post struct {
 	Title      string    `meta:"title"`
 	Cover      string    `meta:"cover"`
 	Created    time.Time `meta:"created"`
+	Teaser     string    `meta:"teaser"`
 	Tags       []*Tag
 	Content    template.HTML
 	InputPath  string
@@ -54,7 +55,10 @@ func parse(post *Post, fileData string) error {
 		Flags: blackfriday.CommonHTMLFlags,
 	})
 	var buf bytes.Buffer
-	parser := blackfriday.New()
+	optList := []blackfriday.Option{
+		blackfriday.WithRenderer(r),
+		blackfriday.WithExtensions(blackfriday.CommonExtensions)}
+	parser := blackfriday.New(optList...)
 	ast := parser.Parse([]byte(parts[1]))
 	r.RenderHeader(&buf, ast)
 	ast.Walk(func(node *blackfriday.Node, entering bool) blackfriday.WalkStatus {
