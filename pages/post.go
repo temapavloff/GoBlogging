@@ -35,7 +35,7 @@ func NewPost(fileContent, inputPath, outputPath, URL string) (*Post, error) {
 		return post, err
 	}
 	if post.Cover != "" {
-		post.Cover = URL + "/" + post.Cover
+		post.Cover = URL + post.Cover
 	}
 	return post, err
 }
