@@ -6,6 +6,7 @@ import (
 	"GoBlogging/pages"
 	"os"
 	"path"
+	"path/filepath"
 	"sync"
 )
 
@@ -23,11 +24,34 @@ func NewWriter(c *config.Config, l layout.Layout) *Writer {
 	}
 }
 
+func cleanup(dir string) error {
+	d, err := os.Open(dir)
+	if err != nil {
+		return err
+	}
+	defer d.Close()
+	names, err := d.Readdirnames(-1)
+	if err != nil {
+		return err
+	}
+	for _, name := range names {
+		// Skip dotnames to keep .git directory
+		if name[0] == '.' {
+			continue
+		}
+		err = os.RemoveAll(filepath.Join(dir, name))
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 // Prepare - cleans the output directory
 func (w *Writer) Prepare() error {
 	outDir := w.config.GetAbsPath(w.config.Output)
 
-	if err := os.RemoveAll(outDir); err != nil {
+	if err := cleanup(outDir); err != nil {
 		return err
 	}
 
