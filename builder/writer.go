@@ -36,7 +36,8 @@ func cleanup(dir string) error {
 	}
 	for _, name := range names {
 		// Skip dotnames to keep .git directory
-		if name[0] == '.' {
+		// Also keep CHANE file to support github pages
+		if name[0] == '.' || name == "CNAME" {
 			continue
 		}
 		err = os.RemoveAll(filepath.Join(dir, name))
