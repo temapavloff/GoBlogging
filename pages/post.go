@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"gopkg.in/russross/blackfriday.v2"
+	"github.com/temapavloff/blackfriday"
 )
 
 // Post - representation of blog post
@@ -62,13 +62,17 @@ func parse(post *Post, fileData string) error {
 	ast := parser.Parse([]byte(parts[1]))
 	r.RenderHeader(&buf, ast)
 	ast.Walk(func(node *blackfriday.Node, entering bool) blackfriday.WalkStatus {
-		if node.Type == blackfriday.Image {
+		if node.Type == blackfriday.Image && entering {
 			dest := node.LinkData.Destination
 			if dest[0] == '/' {
 				dest = append([]byte(post.URL), dest...)
 			}
 			node.LinkData.Destination = dest
+			node.Parent.Attributes.Add("class", "wide")
 		}
+		return blackfriday.GoToNext
+	})
+	ast.Walk(func(node *blackfriday.Node, entering bool) blackfriday.WalkStatus {
 		return r.RenderNode(&buf, node, entering)
 	})
 	r.RenderFooter(&buf, ast)

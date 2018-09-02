@@ -8,6 +8,12 @@
   revision = "86672fcb3f950f35f2e675df2240550f2a50762f"
 
 [[projects]]
+  name = "github.com/temapavloff/blackfriday"
+  packages = ["."]
+  revision = "c84448d85e0629874ad93d6c4fbd570fe9a688a5"
+  version = "v2.0.1"
+
+[[projects]]
   name = "gopkg.in/russross/blackfriday.v2"
   packages = ["."]
   revision = "cadec560ec52d93835bf2f15bd794700d3a2473b"
@@ -16,6 +22,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "2c1b8763180f53a9177ac0d066afe06b9441f9b1d15de7104098cf34bfbf1df8"
+  inputs-digest = "2bc460e5ee3b378bfcf8376c27546160e242ef52c164280eb947cfca1fc51734"
   solver-name = "gps-cdcl"
   solver-version = 1
