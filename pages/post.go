@@ -2,9 +2,8 @@ package pages
 
 import (
 	"GoBlogging/helpers"
+	"bufio"
 	"bytes"
-	"errors"
-	"fmt"
 	"html/template"
 	"os"
 	"path"
@@ -28,15 +27,33 @@ type Post struct {
 	URL        string
 
 	StringTags []string `meta:"tags"`
+
+	sourceContent []byte
 }
 
 // NewPost - creates new Post instance
-func NewPost(fileContent, inputPath, outputPath, URL string) (*Post, error) {
+func NewPost(inputPath, outputPath, URL string) (*Post, error) {
 	post := &Post{InputPath: inputPath, OutputPath: outputPath, URL: URL}
-	err := parse(post, fileContent)
+	file, err := os.Open(inputPath + "/index.md")
 	if err != nil {
 		return post, err
 	}
+	defer file.Close()
+
+	scanner := bufio.NewScanner(file)
+
+	metaMap, err := readMetadata(scanner)
+	if err != nil {
+		return post, err
+	}
+	if err := setMetadata(post, metaMap); err != nil {
+		return post, err
+	}
+	src, err := readTail(scanner)
+	if err != nil {
+		return post, err
+	}
+	post.sourceContent = src
 	if post.Cover != "" {
 		post.Cover = URL + post.Cover
 	}
@@ -61,21 +78,73 @@ func (p *Post) Write(tpl *template.Template) error {
 	if err := f.Chmod(0644); err != nil {
 		return err
 	}
-
+	p.render()
 	return tpl.Execute(f, p)
 }
 
-func parse(post *Post, fileData string) error {
-	parts := strings.SplitN(strings.TrimSpace(fileData), "\n\n", 2)
-
-	if len(parts) != 2 {
-		return errors.New("Metadata and page content must be split by 2 newlines")
+func readMetadata(scanner *bufio.Scanner) (map[string]string, error) {
+	result := make(map[string]string)
+	var emptyLines uint8
+	for scanner.Scan() {
+		line := scanner.Text()
+		if line == "" {
+			emptyLines++
+			continue
+		}
+		if line != "" && emptyLines < 0 {
+			emptyLines--
+		}
+		if emptyLines == 2 {
+			break
+		}
+		parts := strings.SplitN(line, ":", 2)
+		result[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
 	}
 
-	if err := parseMetadata(post, parts[0]); err != nil {
-		return fmt.Errorf("Cannot parse post metadata: %s", err)
+	if err := scanner.Err(); err != nil {
+		return result, err
 	}
 
+	return result, nil
+}
+
+func readTail(scanner *bufio.Scanner) ([]byte, error) {
+	var buf []byte
+
+	for scanner.Scan() {
+		buf = append(buf, scanner.Bytes()...)
+		buf = append(buf, []byte("\n")...)
+	}
+
+	if err := scanner.Err(); err != nil {
+		return buf, err
+	}
+
+	return buf, nil
+}
+
+func setMetadata(p *Post, metaMap map[string]string) error {
+	postRef := reflect.TypeOf(p).Elem()
+	postVal := reflect.ValueOf(p).Elem()
+
+	for i := 0; i < postVal.NumField(); i++ {
+		fv := postVal.Field(i)
+		ft := postRef.Field(i)
+		metaName := ft.Tag.Get("meta")
+
+		if _, has := metaMap[metaName]; fv.CanSet() && has {
+			err := parseFieldByName(fv, metaName, metaMap[metaName])
+			if err != nil {
+				return err
+			}
+		}
+
+	}
+
+	return nil
+}
+
+func (p *Post) render() {
 	r := blackfriday.NewHTMLRenderer(blackfriday.HTMLRendererParameters{
 		Flags: blackfriday.CommonHTMLFlags,
 	})
@@ -84,13 +153,14 @@ func parse(post *Post, fileData string) error {
 		blackfriday.WithRenderer(r),
 		blackfriday.WithExtensions(blackfriday.CommonExtensions)}
 	parser := blackfriday.New(optList...)
-	ast := parser.Parse([]byte(parts[1]))
+	ast := parser.Parse(p.sourceContent)
+
 	r.RenderHeader(&buf, ast)
 	ast.Walk(func(node *blackfriday.Node, entering bool) blackfriday.WalkStatus {
 		if node.Type == blackfriday.Image && entering {
 			dest := node.LinkData.Destination
 			if dest[0] == '/' {
-				dest = append([]byte(post.URL), dest...)
+				dest = append([]byte(p.URL), dest...)
 			}
 			node.LinkData.Destination = dest
 			node.Parent.Attributes.Add("class", "wide")
@@ -101,9 +171,7 @@ func parse(post *Post, fileData string) error {
 		return r.RenderNode(&buf, node, entering)
 	})
 	r.RenderFooter(&buf, ast)
-	post.Content = template.HTML(buf.Bytes())
-
-	return nil
+	p.Content = template.HTML(buf.Bytes())
 }
 
 func parseMetadata(post *Post, metaString string) error {

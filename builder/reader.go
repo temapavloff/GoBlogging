@@ -3,8 +3,6 @@ package builder
 import (
 	"GoBlogging/pages"
 	"fmt"
-	"io/ioutil"
-	"path"
 	"sync"
 )
 
@@ -14,10 +12,8 @@ type ReaderFunc func(*Builder, <-chan string, *sync.WaitGroup)
 // Reader - default worker function
 func Reader(b *Builder, pagesCh <-chan string, wg *sync.WaitGroup) {
 	for page := range pagesCh {
-		pageContent, _ := ioutil.ReadFile(path.Join(page, "./index.md"))
 		relPath := getRelativePath(b.config.GetAbsPath(b.config.Input), page)
 		post, err := pages.NewPost(
-			string(pageContent),
 			page,
 			b.config.GetAbsPath(b.config.Output+relPath),
 			b.config.ServerPath+relPath)
