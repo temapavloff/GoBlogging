@@ -167,13 +167,13 @@ func readMetadata(scanner *bufio.Scanner) (map[string]string, error) {
 		line := scanner.Text()
 		if line == "" {
 			emptyLines++
+			if emptyLines == 2 {
+				break
+			}
 			continue
 		}
 		if line != "" && emptyLines < 0 {
 			emptyLines--
-		}
-		if emptyLines == 2 {
-			break
 		}
 		parts := strings.SplitN(line, ":", 2)
 		result[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
