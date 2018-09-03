@@ -4,13 +4,16 @@ import (
 	"GoBlogging/helpers"
 	"bufio"
 	"bytes"
+	"encoding/base64"
 	"html/template"
 	"os"
 	"path"
 	"reflect"
+	"strconv"
 	"strings"
 	"time"
 
+	"github.com/disintegration/imaging"
 	"github.com/temapavloff/blackfriday"
 )
 
@@ -34,6 +37,7 @@ type Post struct {
 // NewPost - creates new Post instance
 func NewPost(inputPath, outputPath, URL string) (*Post, error) {
 	post := &Post{InputPath: inputPath, OutputPath: outputPath, URL: URL}
+
 	file, err := os.Open(inputPath + "/index.md")
 	if err != nil {
 		return post, err
@@ -46,17 +50,21 @@ func NewPost(inputPath, outputPath, URL string) (*Post, error) {
 	if err != nil {
 		return post, err
 	}
+
 	if err := setMetadata(post, metaMap); err != nil {
 		return post, err
 	}
+
 	src, err := readTail(scanner)
 	if err != nil {
 		return post, err
 	}
+
 	post.sourceContent = src
 	if post.Cover != "" {
 		post.Cover = URL + post.Cover
 	}
+
 	return post, err
 }
 
@@ -80,6 +88,77 @@ func (p *Post) Write(tpl *template.Template) error {
 	}
 	p.render()
 	return tpl.Execute(f, p)
+}
+
+func (p *Post) render() {
+	r := blackfriday.NewHTMLRenderer(blackfriday.HTMLRendererParameters{
+		Flags: blackfriday.CommonHTMLFlags,
+	})
+	var buf bytes.Buffer
+	optList := []blackfriday.Option{
+		blackfriday.WithRenderer(r),
+		blackfriday.WithExtensions(blackfriday.CommonExtensions)}
+	parser := blackfriday.New(optList...)
+	ast := parser.Parse(p.sourceContent)
+
+	r.RenderHeader(&buf, ast)
+
+	ast.Walk(func(node *blackfriday.Node, entering bool) blackfriday.WalkStatus {
+		if node.Type == blackfriday.Image && entering && node.Parent.Type == blackfriday.Paragraph {
+			dest := string(node.LinkData.Destination)
+			if dest[0] == '/' {
+				base64img, w, h, err := writeImage(p.InputPath+dest, p.OutputPath+dest)
+				if err != nil {
+					// Just skip for now
+					return blackfriday.GoToNext
+				}
+				node.Attributes.Add("class", "blur")
+				node.Attributes.Add("onload", "if(!this.dataset.loaded){this.src=this.dataset.src;this.classList.remove('blur');this.dataset.loaded=true}")
+				node.Attributes.Add("data-src", p.URL+dest)
+				node.Attributes.Add("width", strconv.Itoa(w))
+				node.Attributes.Add("height", strconv.Itoa(h))
+				node.LinkData.Destination = []byte(base64img)
+			}
+
+			node.Parent.Attributes.Add("class", "wide")
+		}
+		return blackfriday.GoToNext
+	})
+
+	ast.Walk(func(node *blackfriday.Node, entering bool) blackfriday.WalkStatus {
+		return r.RenderNode(&buf, node, entering)
+	})
+
+	r.RenderFooter(&buf, ast)
+
+	p.Content = template.HTML(buf.Bytes())
+}
+
+func writeImage(src, dst string) (string, int, int, error) {
+	img, err := imaging.Open(src)
+	if err != nil {
+		return "", 0, 0, nil
+	}
+
+	srcW := img.Bounds().Size().X
+	tagretW := 1200
+	if tagretW > srcW {
+		tagretW = srcW
+	}
+
+	destImg := imaging.Resize(img, tagretW, 0, imaging.NearestNeighbor)
+	targetH := destImg.Bounds().Size().Y
+
+	if err := imaging.Save(destImg, dst); err != nil {
+		return "", 0, 0, nil
+	}
+
+	base64img := imaging.Resize(img, 100, 0, imaging.Linear)
+	var buf bytes.Buffer
+	imaging.Encode(&buf, base64img, imaging.JPEG)
+	str := base64.StdEncoding.EncodeToString(buf.Bytes())
+
+	return "data:image/jpeg;base64," + str, tagretW, targetH, nil
 }
 
 func readMetadata(scanner *bufio.Scanner) (map[string]string, error) {
@@ -142,36 +221,6 @@ func setMetadata(p *Post, metaMap map[string]string) error {
 	}
 
 	return nil
-}
-
-func (p *Post) render() {
-	r := blackfriday.NewHTMLRenderer(blackfriday.HTMLRendererParameters{
-		Flags: blackfriday.CommonHTMLFlags,
-	})
-	var buf bytes.Buffer
-	optList := []blackfriday.Option{
-		blackfriday.WithRenderer(r),
-		blackfriday.WithExtensions(blackfriday.CommonExtensions)}
-	parser := blackfriday.New(optList...)
-	ast := parser.Parse(p.sourceContent)
-
-	r.RenderHeader(&buf, ast)
-	ast.Walk(func(node *blackfriday.Node, entering bool) blackfriday.WalkStatus {
-		if node.Type == blackfriday.Image && entering {
-			dest := node.LinkData.Destination
-			if dest[0] == '/' {
-				dest = append([]byte(p.URL), dest...)
-			}
-			node.LinkData.Destination = dest
-			node.Parent.Attributes.Add("class", "wide")
-		}
-		return blackfriday.GoToNext
-	})
-	ast.Walk(func(node *blackfriday.Node, entering bool) blackfriday.WalkStatus {
-		return r.RenderNode(&buf, node, entering)
-	})
-	r.RenderFooter(&buf, ast)
-	p.Content = template.HTML(buf.Bytes())
 }
 
 func parseMetadata(post *Post, metaString string) error {
