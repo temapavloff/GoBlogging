@@ -112,8 +112,7 @@ func (p *Post) render() {
 					// Just skip for now
 					return blackfriday.GoToNext
 				}
-				node.Attributes.Add("class", "blur")
-				node.Attributes.Add("onload", "if(!this.dataset.loaded){this.src=this.dataset.src;this.classList.remove('blur');this.dataset.loaded=true}")
+				node.Attributes.Add("class", "js-img blur")
 				node.Attributes.Add("data-src", p.URL+dest)
 				node.Attributes.Add("width", strconv.Itoa(w))
 				node.Attributes.Add("height", strconv.Itoa(h))
