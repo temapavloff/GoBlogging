@@ -1,4 +1,4 @@
-package builder
+package helpers
 
 import (
 	"io"
@@ -9,7 +9,7 @@ import (
 )
 
 // copyAll copies src to dest, doesn't matter if src is a directory or a file
-func copyAll(src, dest string) error {
+func CopyAll(src, dest string) error {
 	info, err := os.Lstat(src)
 	if err != nil {
 		return err
@@ -18,7 +18,7 @@ func copyAll(src, dest string) error {
 }
 
 // copyAll copies src to dest, excepts giver exclude file extension
-func copyExclude(src, dest, exclude string) error {
+func CopyExclude(src, dest, exclude string) error {
 	info, err := os.Lstat(src)
 	if err != nil {
 		return err

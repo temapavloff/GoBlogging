@@ -2,10 +2,10 @@ package builder
 
 import (
 	"GoBlogging/config"
+	"GoBlogging/helpers"
 	"GoBlogging/layout"
 	"GoBlogging/pages"
 	"os"
-	"path"
 	"path/filepath"
 	"sync"
 )
@@ -64,7 +64,7 @@ func (w *Writer) Prepare() error {
 
 	// Its OK if template doesn't have assets
 	if _, err := os.Stat(assetsPath); err == nil && assetsPath != "" {
-		copyAll(assetsPath, outDir+"/assets")
+		helpers.CopyAll(assetsPath, outDir+"/assets")
 	}
 
 	return nil
@@ -77,69 +77,27 @@ func (w *Writer) Write(nodeCh <-chan pages.Node,
 	for n := range nodeCh {
 		switch n.Type {
 		case pages.IndexType:
-			err = w.writeIndex(n.Index)
+			tpl, err := w.layout.GetIndexTpl()
+			if err != nil {
+				break
+			}
+			err = n.Index.Write(tpl)
 		case pages.TagType:
-			err = w.writeTag(n.Tag)
+			tpl, err := w.layout.GetTagTpl()
+			if err != nil {
+				break
+			}
+			err = n.Tag.Write(tpl)
 		case pages.PostType:
-			err = w.writePost(n.Post)
+			tpl, err := w.layout.GetPostTpl()
+			if err != nil {
+				break
+			}
+			err = n.Post.Write(tpl)
 		}
 		if err != nil {
 			errCh <- err
 		}
 		wg.Done()
 	}
-}
-
-func (w *Writer) writeIndex(index *pages.Index) error {
-	f, err := os.Create(path.Join(index.Output, "/index.html"))
-	defer f.Close()
-	if err != nil {
-		return err
-	}
-
-	if err := f.Chmod(0644); err != nil {
-		return err
-	}
-
-	return w.layout.RenderIndex(f, index)
-}
-
-func (w *Writer) writeTag(tag *pages.Tag) error {
-	if err := os.MkdirAll(tag.Output, 0755); err != nil {
-		return err
-	}
-
-	f, err := os.Create(path.Join(tag.Output, "/index.html"))
-	defer f.Close()
-	if err != nil {
-		return err
-	}
-
-	if err := f.Chmod(0644); err != nil {
-		return err
-	}
-
-	return w.layout.RenderTag(f, tag)
-}
-
-func (w *Writer) writePost(post *pages.Post) error {
-	if err := os.MkdirAll(post.OutputPath, 0755); err != nil {
-		return err
-	}
-
-	if err := copyExclude(post.InputPath, post.OutputPath, ".md"); err != nil {
-		return err
-	}
-
-	f, err := os.Create(path.Join(post.OutputPath, "/index.html"))
-	defer f.Close()
-	if err != nil {
-		return err
-	}
-
-	if err := f.Chmod(0644); err != nil {
-		return err
-	}
-
-	return w.layout.RenderPost(f, post)
 }

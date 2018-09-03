@@ -1,10 +1,13 @@
 package pages
 
 import (
+	"GoBlogging/helpers"
 	"bytes"
 	"errors"
 	"fmt"
 	"html/template"
+	"os"
+	"path"
 	"reflect"
 	"strings"
 	"time"
@@ -38,6 +41,28 @@ func NewPost(fileContent, inputPath, outputPath, URL string) (*Post, error) {
 		post.Cover = URL + post.Cover
 	}
 	return post, err
+}
+
+func (p *Post) Write(tpl *template.Template) error {
+	if err := os.MkdirAll(p.OutputPath, 0755); err != nil {
+		return err
+	}
+
+	if err := helpers.CopyExclude(p.InputPath, p.OutputPath, ".md"); err != nil {
+		return err
+	}
+
+	f, err := os.Create(path.Join(p.OutputPath, "/index.html"))
+	defer f.Close()
+	if err != nil {
+		return err
+	}
+
+	if err := f.Chmod(0644); err != nil {
+		return err
+	}
+
+	return tpl.Execute(f, p)
 }
 
 func parse(post *Post, fileData string) error {

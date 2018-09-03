@@ -2,8 +2,13 @@ package pages
 
 import (
 	"GoBlogging/config"
-	"sort"
+	"html/template"
 )
+
+// Page rendering iterface
+type Page interface {
+	Write(*template.Template) error
+}
 
 // Pages - representation of whole blog
 type Pages struct {
@@ -76,68 +81,4 @@ func (p *Pages) Len() int {
 func (p *Pages) Add(post *Post) {
 	p.Index.addPost(post)
 	p.Tags.updateTags(p.config, post)
-}
-
-// Index - representation of index page
-type Index struct {
-	Title  string
-	Posts  []*Post
-	Output string
-}
-
-// AddPost - adds new post into pages
-func (i *Index) addPost(p *Post) {
-	i.Posts = append(i.Posts, p)
-}
-
-// Order - orders posts by creation time
-func (i *Index) order() {
-	sort.Slice(i.Posts, func(prev, next int) bool {
-		return i.Posts[prev].Created.After(i.Posts[next].Created)
-	})
-}
-
-// Tag - representation of tag page
-type Tag struct {
-	Title  string
-	Count  int
-	Posts  []*Post
-	URL    string
-	Output string
-}
-
-// Tags - representation of all tags
-type Tags struct {
-	data map[string]*Tag
-}
-
-func (t *Tag) order() {
-	sort.Slice(t.Posts, func(prev, next int) bool {
-		return t.Posts[prev].Created.After(t.Posts[next].Created)
-	})
-}
-
-func (t *Tags) updateTags(c *config.Config, p *Post) {
-	for _, tagString := range p.StringTags {
-		p.Tags = append(p.Tags, t.updateOneTag(c, tagString, p))
-	}
-}
-
-func (t *Tags) updateOneTag(c *config.Config, tagString string, p *Post) *Tag {
-	if _, has := t.data[tagString]; !has {
-		tagSlug := slug(tagString)
-		newTag := &Tag{
-			Title:  tagString,
-			URL:    c.ServerPath + "/tags/" + tagSlug,
-			Output: c.GetAbsPath(c.Output + "/tags/" + tagSlug),
-		}
-		t.data[tagString] = newTag
-	}
-
-	tag := t.data[tagString]
-	tag.Count++
-	tag.Posts = append(tag.Posts, p)
-	t.data[tagString] = tag
-
-	return tag
 }

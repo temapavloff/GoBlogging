@@ -2,10 +2,8 @@ package layout
 
 import (
 	"GoBlogging/config"
-	"GoBlogging/pages"
 	"fmt"
 	"html/template"
-	"io"
 	"io/ioutil"
 	"os"
 )
@@ -69,43 +67,34 @@ func (l Layout) prepareLayout() (*template.Template, error) {
 	return tpl, nil
 }
 
-// RenderPost - renders single page layout
-func (l Layout) RenderPost(writer io.Writer, post *pages.Post) error {
+// GetPostTpl - returns post template
+func (l Layout) GetPostTpl() (*template.Template, error) {
 	tpl, err := l.prepareLayout()
 	if err != nil {
-		return err
-	}
-	if _, err := tpl.New("content").Parse(l.postTemplate); err != nil {
-		return err
+		return tpl, err
 	}
 
-	return tpl.Execute(writer, post)
+	return tpl.Parse(l.postTemplate)
 }
 
-// RenderIndex - renders main page
-func (l Layout) RenderIndex(writer io.Writer, index *pages.Index) error {
+// GetIndexTpl - returns index template
+func (l Layout) GetIndexTpl() (*template.Template, error) {
 	tpl, err := l.prepareLayout()
 	if err != nil {
-		return err
-	}
-	if _, err := tpl.New("content").Parse(l.indexTemplate); err != nil {
-		return err
+		return tpl, err
 	}
 
-	return tpl.Execute(writer, index)
+	return tpl.Parse(l.indexTemplate)
 }
 
-// RenderTag - renders one tag page
-func (l Layout) RenderTag(writer io.Writer, tag *pages.Tag) error {
+// GetTagTpl - return tag template
+func (l Layout) GetTagTpl() (*template.Template, error) {
 	tpl, err := l.prepareLayout()
 	if err != nil {
-		return err
-	}
-	if _, err := tpl.New("content").Parse(l.tagTemplate); err != nil {
-		return err
+		return tpl, err
 	}
 
-	return tpl.Execute(writer, tag)
+	return tpl.Parse(l.tagTemplate)
 }
 
 func getTemplatePath(c *config.Config, name string) string {
