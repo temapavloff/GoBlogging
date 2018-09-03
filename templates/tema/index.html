@@ -1,0 +1,31 @@
+{{ define "head" }}
+<title>{{ .Title }}</title>
+<meta name="og:title" content="{{ .Title }}">
+<meta name="og:description" content="Безсвязные записки о жизни и вот этом вот всём">
+{{ end }}
+
+{{ define "content" }}
+<header class="index__header">
+    <h1 class="index__title">Тёмин<br>бложег</h1>
+    <h2 class="index__subtitle">
+        Безсвязные записки о вот этом вот всём
+    </h2>
+</header>
+<main class="index__main">
+    {{ range .Posts }}
+    <article class="index__article">
+        <header class="index__articleHeader">    
+            <h1 class="index__articleTitle">
+                <a class="index__articleLink" href="{{ .URL }}">{{ .Title }}</a>
+            </h1>
+            <time datetime="{{ .Created }}" hidden>{{ .Created }}</time>      
+        </header>
+        {{ if .Teaser }}
+        <p class="index__articleTeaser">
+            {{ .Teaser }}
+        </p>
+        {{ end }}
+    </article>
+    {{ end }}
+</main>
+{{ end }}
