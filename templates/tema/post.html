@@ -10,7 +10,11 @@
 
 {{ define "content" }}
 {{ if .Cover }}
-<header class="index__header -with-cover" style="background-image: url('{{ .Cover }}')">
+<header class="index__header -with-cover">
+    <div 
+        class="index__headerCover blur js-cover" 
+        data-cover="{{ .Cover }}"
+        style="background-image: url('{{ .CoverThumb }}')"></div>
     <div class="index__headerOverlay"></div>
     <div class="index__title">
         <a href="/" class="index__titleLink">Тёмин<br>бложег</a>

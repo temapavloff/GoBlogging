@@ -1,11 +1,12 @@
 package pages
 
 import (
-	"GoBlogging/helpers"
 	"bufio"
 	"bytes"
 	"encoding/base64"
+	"fmt"
 	"html/template"
+	"image"
 	"os"
 	"path"
 	"reflect"
@@ -23,6 +24,7 @@ type Post struct {
 	Cover      string    `meta:"cover"`
 	Created    time.Time `meta:"created"`
 	Teaser     string    `meta:"teaser"`
+	CoverThumb template.URL
 	Tags       []*Tag
 	Content    template.HTML
 	InputPath  string
@@ -61,19 +63,11 @@ func NewPost(inputPath, outputPath, URL string) (*Post, error) {
 	}
 
 	post.sourceContent = src
-	if post.Cover != "" {
-		post.Cover = URL + post.Cover
-	}
-
 	return post, err
 }
 
 func (p *Post) Write(tpl *template.Template) error {
 	if err := os.MkdirAll(p.OutputPath, 0755); err != nil {
-		return err
-	}
-
-	if err := helpers.CopyExclude(p.InputPath, p.OutputPath, ".md"); err != nil {
 		return err
 	}
 
@@ -85,6 +79,16 @@ func (p *Post) Write(tpl *template.Template) error {
 
 	if err := f.Chmod(0644); err != nil {
 		return err
+	}
+	if p.Cover != "" {
+		thumb, err := writeCover(
+			path.Join(p.InputPath, p.Cover),
+			path.Join(p.OutputPath, p.Cover))
+		if err != nil {
+			return err
+		}
+		p.CoverThumb = template.URL(thumb)
+		p.Cover = path.Join(p.URL, p.Cover)
 	}
 	p.render()
 	return tpl.Execute(f, p)
@@ -133,6 +137,14 @@ func (p *Post) render() {
 	p.Content = template.HTML(buf.Bytes())
 }
 
+func thumb(img image.Image) string {
+	base64img := imaging.Resize(img, 100, 0, imaging.Linear)
+	var buf bytes.Buffer
+	imaging.Encode(&buf, base64img, imaging.JPEG)
+	str := base64.StdEncoding.EncodeToString(buf.Bytes())
+	return "data:image/jpeg;base64," + str
+}
+
 func writeImage(src, dst string) (string, int, int, error) {
 	img, err := imaging.Open(src)
 	if err != nil {
@@ -149,15 +161,31 @@ func writeImage(src, dst string) (string, int, int, error) {
 	targetH := destImg.Bounds().Size().Y
 
 	if err := imaging.Save(destImg, dst); err != nil {
-		return "", 0, 0, nil
+		return "", 0, 0, err
 	}
 
-	base64img := imaging.Resize(img, 100, 0, imaging.Linear)
-	var buf bytes.Buffer
-	imaging.Encode(&buf, base64img, imaging.JPEG)
-	str := base64.StdEncoding.EncodeToString(buf.Bytes())
+	return thumb(img), tagretW, targetH, nil
+}
 
-	return "data:image/jpeg;base64," + str, tagretW, targetH, nil
+func writeCover(src, dst string) (string, error) {
+	img, err := imaging.Open(src)
+	if err != nil {
+		return "", err
+	}
+
+	srcW := img.Bounds().Size().X
+	targetW := 1200
+	destImg := imaging.Resize(img, targetW, 0, imaging.NearestNeighbor)
+
+	if targetW > srcW {
+		destImg = imaging.Blur(destImg, 5.0)
+	}
+
+	if err := imaging.Save(destImg, dst); err != nil {
+		return "", err
+	}
+
+	return thumb(img), nil
 }
 
 func readMetadata(scanner *bufio.Scanner) (map[string]string, error) {
@@ -176,6 +204,9 @@ func readMetadata(scanner *bufio.Scanner) (map[string]string, error) {
 			emptyLines--
 		}
 		parts := strings.SplitN(line, ":", 2)
+		if len(parts) != 2 {
+			return result, fmt.Errorf("Following line \"%s\" has invalid metadata, check post format", line)
+		}
 		result[strings.TrimSpace(parts[0])] = strings.TrimSpace(parts[1])
 	}
 
