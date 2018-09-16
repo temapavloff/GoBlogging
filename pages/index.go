@@ -14,7 +14,8 @@ type Index struct {
 	Output      string
 	URL         string
 	Description string
-	Author      string
+	AuthorName  string
+	AuthorEmail string
 	Lang        string
 }
 

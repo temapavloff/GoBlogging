@@ -103,7 +103,7 @@ func (l Layout) GetTagTpl() (*template.Template, error) {
 func (l Layout) GetRSSTpl() (*txt.Template, error) {
 	tpl := txt.New("layout").Funcs(txt.FuncMap{
 		"formatDateRFC": func(date time.Time) string {
-			return date.Format("Monday, 02 Jan 2006 15:04:05 MST")
+			return date.Format(time.RFC822)
 		},
 	})
 	return tpl.Parse(rssDefault)

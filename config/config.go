@@ -18,7 +18,8 @@ type Config struct {
 
 	BlogTitle       string `json:"blog_title"`
 	BlogDescription string `json:"blog_description"`
-	Author          string `json:"author"`
+	AuthorName      string `json:"author_name"`
+	AuthorEmail     string `json:"author_email"`
 	Lang            string `json:"lang"`
 	ServerPath      string `json:"server_path"`
 	Origin          string `json:"origin"`

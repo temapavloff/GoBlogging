@@ -76,8 +76,9 @@ const tagDefault = `
 {{ end }}`
 
 const rssDefault = `<?xml version="1.0"?>
-<rss version="2.0">
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
 	<channel>
+		<atom:link href="{{ .URL }}/feeds/rss.xml" rel="self" type="application/rss+xml" />
     	<title>{{ .Title }}</title>
     	<link>{{ .URL }}</link>
     	<description>{{ .Description }}</description>
@@ -87,8 +88,8 @@ const rssDefault = `<?xml version="1.0"?>
     	<lastBuildDate>{{ formatDateRFC $firstItem.Created }}</lastBuildDate>
     	<docs>http://blogs.law.harvard.edu/tech/rss</docs>
     	<generator>GoBlogging</generator>
-    	<managingEditor>{{ .Author }}</managingEditor>
-    	<webMaster>{{ .Author }}</webMaster>
+    	<managingEditor>{{ .AuthorEmail (.AuthorName) }}</managingEditor>
+    	<webMaster>{{ .AuthorEmail (.AuthorName) }}</webMaster>
 		{{ range .Posts }}
 		<item>
 			<title>{{ .Title }}</title>
