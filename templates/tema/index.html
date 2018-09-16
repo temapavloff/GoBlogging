@@ -2,7 +2,7 @@
 <title>{{ .Title }}</title>
 <meta name="og:title" content="{{ .Title }}">
 <meta name="og:description" content="{{ .Description }}">
-<link rel="alternate" type="application/rss+xml" title="RSS для {{ .Title }}" href="/rss.xml" />
+<link rel="alternate" type="application/rss+xml" title="RSS для {{ .Title }}" href="{{ .URL }}/feeds/rss.xml" />
 {{ end }}
 
 {{ define "content" }}

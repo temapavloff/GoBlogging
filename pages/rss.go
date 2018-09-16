@@ -12,7 +12,11 @@ type RSS struct {
 }
 
 func (r *RSS) Write(l layout.Layout) error {
-	f, err := os.Create(path.Join(r.Output, "/rss.xml"))
+	if err := os.MkdirAll(path.Join(r.Output, "/feeds"), 0755); err != nil {
+		return err
+	}
+
+	f, err := os.Create(path.Join(r.Output, "/feeds", "/rss.xml"))
 	defer f.Close()
 	if err != nil {
 		return err
