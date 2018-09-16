@@ -2,7 +2,7 @@ package pages
 
 import (
 	"GoBlogging/config"
-	"html/template"
+	"GoBlogging/layout"
 	"os"
 	"path"
 	"sort"
@@ -22,7 +22,7 @@ type Tags struct {
 	data map[string]*Tag
 }
 
-func (t *Tag) Write(tpl *template.Template) error {
+func (t *Tag) Write(l layout.Layout) error {
 	if err := os.MkdirAll(t.Output, 0755); err != nil {
 		return err
 	}
@@ -34,6 +34,11 @@ func (t *Tag) Write(tpl *template.Template) error {
 	}
 
 	if err := f.Chmod(0644); err != nil {
+		return err
+	}
+
+	tpl, err := l.GetTagTpl()
+	if err != nil {
 		return err
 	}
 
@@ -57,7 +62,7 @@ func (t *Tags) updateOneTag(c *config.Config, tagString string, p *Post) *Tag {
 		tagSlug := slug(tagString)
 		newTag := &Tag{
 			Title:  tagString,
-			URL:    c.ServerPath + "/tags/" + tagSlug,
+			URL:    c.Origin + c.ServerPath + "/tags/" + tagSlug,
 			Output: c.GetAbsPath(c.Output + "/tags/" + tagSlug),
 		}
 		t.data[tagString] = newTag

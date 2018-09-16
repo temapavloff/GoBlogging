@@ -16,8 +16,12 @@ type Config struct {
 	Input    string `json:"input"`
 	Output   string `json:"output"`
 
-	BlogTitle  string `json:"blog_title"`
-	ServerPath string `json:"server_path"`
+	BlogTitle       string `json:"blog_title"`
+	BlogDescription string `json:"blog_description"`
+	Author          string `json:"author"`
+	Lang            string `json:"lang"`
+	ServerPath      string `json:"server_path"`
+	Origin          string `json:"origin"`
 }
 
 // New - creates new Config instance

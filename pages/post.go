@@ -1,6 +1,7 @@
 package pages
 
 import (
+	"GoBlogging/layout"
 	"bufio"
 	"bytes"
 	"encoding/base64"
@@ -66,7 +67,7 @@ func NewPost(inputPath, outputPath, URL string) (*Post, error) {
 	return post, err
 }
 
-func (p *Post) Write(tpl *template.Template) error {
+func (p *Post) Write(l layout.Layout) error {
 	if err := os.MkdirAll(p.OutputPath, 0755); err != nil {
 		return err
 	}
@@ -91,6 +92,12 @@ func (p *Post) Write(tpl *template.Template) error {
 		p.Cover = path.Join(p.URL, p.Cover)
 	}
 	p.render()
+
+	tpl, err := l.GetPostTpl()
+	if err != nil {
+		return err
+	}
+
 	return tpl.Execute(f, p)
 }
 

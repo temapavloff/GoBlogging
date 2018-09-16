@@ -2,12 +2,12 @@ package pages
 
 import (
 	"GoBlogging/config"
-	"html/template"
+	"GoBlogging/layout"
 )
 
 // Page rendering iterface
 type Page interface {
-	Write(*template.Template) error
+	Write(layout.Layout) error
 }
 
 // Pages - representation of whole blog
@@ -21,50 +21,41 @@ type Pages struct {
 func New(c *config.Config) *Pages {
 	return &Pages{
 		config: c,
-		Index:  &Index{Title: c.BlogTitle, Output: c.GetAbsPath(c.Output)},
-		Tags:   &Tags{data: make(map[string]*Tag)},
+		Index: &Index{
+			Title:       c.BlogTitle,
+			Output:      c.GetAbsPath(c.Output),
+			URL:         c.Origin + c.ServerPath,
+			Description: c.BlogDescription,
+			Author:      c.Author,
+			Lang:        c.Lang,
+		},
+		Tags: &Tags{data: make(map[string]*Tag)},
 	}
 }
 
-// NodeType - type of page
-type NodeType uint8
-
-const (
-	// IndexType - type of index page
-	IndexType = 0
-	// TagType - type of tag page
-	TagType = 1
-	// PostType - type of post page
-	PostType = 2
-)
-
-// Node - special representation page to walk
-type Node struct {
-	Type  NodeType
-	Index *Index
-	Tag   *Tag
-	Post  *Post
-}
-
 // PageWalker - type of callback for Pages.Walk
-type PageWalker func(Node) error
+type PageWalker func(Page) error
 
 // Walk - walks over all generated pages
 func (p *Pages) Walk(walker PageWalker) error {
 	p.Index.order()
-	if err := walker(Node{Type: IndexType, Index: p.Index}); err != nil {
+	if err := walker(p.Index); err != nil {
+		return err
+	}
+
+	if err := walker(&RSS{p.Index}); err != nil {
 		return err
 	}
 
 	for _, post := range p.Index.Posts {
-		if err := walker(Node{Type: PostType, Post: post}); err != nil {
+		if err := walker(post); err != nil {
 			return err
 		}
 	}
 
 	for _, tag := range p.Tags.data {
 		tag.order()
-		if err := walker(Node{Type: TagType, Tag: tag}); err != nil {
+		if err := walker(tag); err != nil {
 			return err
 		}
 	}

@@ -1,7 +1,8 @@
 {{ define "head" }}
 <title>{{ .Title }}</title>
 <meta name="og:title" content="{{ .Title }}">
-<meta name="og:description" content="Безсвязные записки о жизни и вот этом вот всём">
+<meta name="og:description" content="{{ .Description }}">
+<link rel="alternate" type="application/rss+xml" title="RSS для {{ .Title }}" href="/rss.xml" />
 {{ end }}
 
 {{ define "content" }}

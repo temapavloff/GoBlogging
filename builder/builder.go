@@ -54,7 +54,7 @@ func (b *Builder) Write(w *Writer) {
 
 	var wg sync.WaitGroup
 	errCh := make(chan error, 1)
-	nodeCh := make(chan pages.Node)
+	nodeCh := make(chan pages.Page)
 
 	defer close(nodeCh)
 
@@ -64,7 +64,7 @@ func (b *Builder) Write(w *Writer) {
 	for i := 0; i < b.workers; i++ {
 		go w.Write(nodeCh, errCh, &wg)
 	}
-	b.pages.Walk(func(n pages.Node) error {
+	b.pages.Walk(func(n pages.Page) error {
 		wg.Add(1)
 		nodeCh <- n
 		return nil

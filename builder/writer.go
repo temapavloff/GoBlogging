@@ -71,31 +71,10 @@ func (w *Writer) Prepare() error {
 }
 
 // Write - writes page to disk
-func (w *Writer) Write(nodeCh <-chan pages.Node,
+func (w *Writer) Write(pageCh <-chan pages.Page,
 	errCh chan<- error, wg *sync.WaitGroup) {
-	var err error
-	for n := range nodeCh {
-		switch n.Type {
-		case pages.IndexType:
-			tpl, err := w.layout.GetIndexTpl()
-			if err != nil {
-				break
-			}
-			err = n.Index.Write(tpl)
-		case pages.TagType:
-			tpl, err := w.layout.GetTagTpl()
-			if err != nil {
-				break
-			}
-			err = n.Tag.Write(tpl)
-		case pages.PostType:
-			tpl, err := w.layout.GetPostTpl()
-			if err != nil {
-				break
-			}
-			err = n.Post.Write(tpl)
-		}
-		if err != nil {
+	for n := range pageCh {
+		if err := n.Write(w.layout); err != nil {
 			errCh <- err
 		}
 		wg.Done()

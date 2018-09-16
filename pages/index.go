@@ -1,7 +1,7 @@
 package pages
 
 import (
-	"html/template"
+	"GoBlogging/layout"
 	"os"
 	"path"
 	"sort"
@@ -9,9 +9,13 @@ import (
 
 // Index - representation of index page
 type Index struct {
-	Title  string
-	Posts  []*Post
-	Output string
+	Title       string
+	Posts       []*Post
+	Output      string
+	URL         string
+	Description string
+	Author      string
+	Lang        string
 }
 
 // AddPost - adds new post into pages
@@ -26,7 +30,7 @@ func (i *Index) order() {
 	})
 }
 
-func (i *Index) Write(tpl *template.Template) error {
+func (i *Index) Write(l layout.Layout) error {
 	f, err := os.Create(path.Join(i.Output, "/index.html"))
 	defer f.Close()
 	if err != nil {
@@ -34,6 +38,11 @@ func (i *Index) Write(tpl *template.Template) error {
 	}
 
 	if err := f.Chmod(0644); err != nil {
+		return err
+	}
+
+	tpl, err := l.GetIndexTpl()
+	if err != nil {
 		return err
 	}
 

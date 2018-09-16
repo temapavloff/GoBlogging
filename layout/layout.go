@@ -6,6 +6,8 @@ import (
 	"html/template"
 	"io/ioutil"
 	"os"
+	txt "text/template"
+	"time"
 )
 
 const outerName = "layout.html"
@@ -95,6 +97,16 @@ func (l Layout) GetTagTpl() (*template.Template, error) {
 	}
 
 	return tpl.Parse(l.tagTemplate)
+}
+
+// GetRSSTpl - returns template for RSS-feed
+func (l Layout) GetRSSTpl() (*txt.Template, error) {
+	tpl := txt.New("layout").Funcs(txt.FuncMap{
+		"formatDateRFC": func(date time.Time) string {
+			return date.Format("Monday, 02 Jan 2006 15:04:05 MST")
+		},
+	})
+	return tpl.Parse(rssDefault)
 }
 
 func getTemplatePath(c *config.Config, name string) string {

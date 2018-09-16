@@ -16,7 +16,7 @@ func Reader(b *Builder, pagesCh <-chan string, wg *sync.WaitGroup) {
 		post, err := pages.NewPost(
 			page,
 			b.config.GetAbsPath(b.config.Output+relPath),
-			b.config.ServerPath+relPath)
+			b.config.Origin+b.config.ServerPath+relPath)
 		if err != nil {
 			fmt.Printf("Cannot create Post object: %s\n", err)
 		}

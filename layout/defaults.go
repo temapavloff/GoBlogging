@@ -74,3 +74,30 @@ const tagDefault = `
 	{{ end }}
 </main>
 {{ end }}`
+
+const rssDefault = `<?xml version="1.0"?>
+<rss version="2.0">
+	<channel>
+    	<title>{{ .Title }}</title>
+    	<link>{{ .URL }}</link>
+    	<description>{{ .Description }}</description>
+		<language>{{ .Lang }}</language>
+		{{ $firstItem := index .Posts 0 }}
+    	<pubDate>{{ formatDateRFC $firstItem.Created }}</pubDate>
+    	<lastBuildDate>{{ formatDateRFC $firstItem.Created }}</lastBuildDate>
+    	<docs>http://blogs.law.harvard.edu/tech/rss</docs>
+    	<generator>GoBlogging</generator>
+    	<managingEditor>{{ .Author }}</managingEditor>
+    	<webMaster>{{ .Author }}</webMaster>
+		{{ range .Posts }}
+		<item>
+			<title>{{ .Title }}</title>
+			<link>{{ .URL }}</link>
+			<description>{{ .Teaser }}</description>
+			<pubDate>{{ formatDateRFC .Created }}</pubDate>
+      		<guid>{{ .URL }}</guid>
+		</item>
+		{{ end }}
+	</channel>
+</rss>
+`
