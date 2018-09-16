@@ -89,7 +89,7 @@ func (p *Post) Write(l layout.Layout) error {
 			return err
 		}
 		p.CoverThumb = template.URL(thumb)
-		p.Cover = path.Join(p.URL, p.Cover)
+		p.Cover = p.URL + "/" + p.Cover
 	}
 	p.render()
 
