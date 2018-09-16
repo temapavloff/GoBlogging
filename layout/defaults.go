@@ -88,8 +88,8 @@ const rssDefault = `<?xml version="1.0"?>
     	<lastBuildDate>{{ formatDateRFC $firstItem.Created }}</lastBuildDate>
     	<docs>http://blogs.law.harvard.edu/tech/rss</docs>
     	<generator>GoBlogging</generator>
-    	<managingEditor>{{ .AuthorEmail (.AuthorName) }}</managingEditor>
-    	<webMaster>{{ .AuthorEmail (.AuthorName) }}</webMaster>
+    	<managingEditor>{{ .AuthorEmail }} {{ (.AuthorName) }}</managingEditor>
+    	<webMaster>{{ .AuthorEmail }} {{ (.AuthorName) }}</webMaster>
 		{{ range .Posts }}
 		<item>
 			<title>{{ .Title }}</title>
